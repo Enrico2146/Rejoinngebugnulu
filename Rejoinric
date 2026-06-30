@@ -2,6 +2,7 @@ cat << 'EOF' > bot.sh
 #!/bin/bash
 
 LINK_GAME="roblox://placeID=97598239454123"
+STATUS_RONDA=1  # Nilai awal biar gak error 'unary operator expected'
 
 # ==================================================
 # 1. OTOMATIS BACA PACKAGE (DIBERSIHKAN TOTAL)
@@ -14,7 +15,7 @@ reset
 clear
 
 echo "=================================================="
-echo "        Bot Rejoin v7.1 (Anti Miring Fix)         "
+echo "         Bot Rejoin v7.1 (Anti Miring Fix)         "
 echo "=================================================="
 
 # Masukkan ke Array
@@ -31,14 +32,14 @@ COUNT=${#APPS[@]}
 
 # Validasi jika kosong
 if [ $COUNT -eq 0 ]; then
-    echo "鉂� Waduh cui, gak ada aplikasi Roblox terdeteksi di RF ini!"
+    echo "❌ Waduh cui, gak ada aplikasi Roblox terdeteksi di RF ini!"
     exit 1
 fi
 
 ALL_INDEX=$((COUNT + 1))
 
 # 2. TAMPILKAN MENU YANG DIJAMIN LURUS
-echo "馃摫 Ditemukan $COUNT Aplikasi Roblox:"
+echo "📱 Ditemukan $COUNT Aplikasi Roblox:"
 echo "--------------------------------------------------"
 for i in "${!APPS[@]}"; do
     alias_menu=$(echo "${APPS[$i]}" | sed 's/com.roblox.//')
@@ -54,7 +55,7 @@ read -p "Masukkan pilihan angka: " PILIHAN
 TARGETS=()
 if [ "$PILIHAN" == "$ALL_INDEX" ] || [ -z "$PILIHAN" ]; then
     TARGETS=("${APPS[@]}")
-    echo "鈿� Mode: Memantau SEMUA Clone!"
+    echo "⚙️ Mode: Memantau SEMUA Clone!"
 else
     for p in $PILIHAN; do
         idx=$((p-1))
@@ -62,46 +63,14 @@ else
     done
 fi
 
-kirim_tele() {
-    if command -v wget &> /dev/null; then
-        wget -qO- "$URL/sendMessage?chat_id=$CHAT_ID&text=$(echo "$1" | sed 's/ /+/g')" &> /dev/null
-    else
-        curl -s "$URL/sendMessage?chat_id=$CHAT_ID&text=$(echo "$1" | sed 's/ /+/g')" &> /dev/null
-    fi
-}
-
 echo ""
 echo "--- SISTEM AKTIF & SIAP RONDA ---"
 for t in "${TARGETS[@]}"; do
     echo "-> Memantau: $t"
 done
-kirim_tele "馃 Bot Rejoin v7.1 Aktif memantau pilihan lu!"
 
 # 5. LOOP UTAMA RONDA
 while true; do
-    # Cek Telegram buat /stop_ronda atau /start_ronda
-    if command -v wget &> /dev/null; then
-        RESPONSE=$(wget -T 3 -qO- "$URL/getUpdates?offset=$OFFSET&timeout=1" 2>/dev/null)
-    else
-        RESPONSE=$(curl -s --max-time 3 "$URL/getUpdates?offset=$OFFSET&timeout=1" 2>/dev/null)
-    fi
-
-    if [ ! -z "$RESPONSE" ] && [ "$RESPONSE" != '{"ok":true,"result":[]}' ]; then
-        NEW_OFFSET=$(echo "$RESPONSE" | awk -F'"update_id":' '{print $2}' | awk -F',' '{print $1}')
-        if [ ! -z "$NEW_OFFSET" ]; then OFFSET=$((NEW_OFFSET + 1)); fi
-        
-        if [[ "$RESPONSE" == *"/stop_ronda"* ]]; then 
-            STATUS_RONDA=0
-            echo "馃敶 [SISTEM] Ronda dinonaktifkan via Telegram!"
-            kirim_tele "馃敶 Pengawas otomatis MATI!"
-        fi
-        if [[ "$RESPONSE" == *"/start_ronda"* ]]; then 
-            STATUS_RONDA=1
-            echo "馃煝 [SISTEM] Ronda diaktifkan kembali via Telegram!"
-            kirim_tele "馃煝 Pengawas otomatis AKTIF!"
-        fi
-    fi
-
     # Eksekusi ronda jika status aktif
     if [ $STATUS_RONDA -eq 1 ]; then
         REKOR_SISTEM=$(su -c "dumpsys window windows | grep -E 'Window #|mCurrentFocus|mFocusedApp'" | tr -d '\r')
@@ -110,8 +79,7 @@ while true; do
             alias_app=$(echo "$app" | sed 's/com.roblox.clien//' | sed 's/com.roblox.//')
             
             if ! echo "$REKOR_SISTEM" | grep -q "$app"; then
-                echo "鈿狅笍 Clone $alias_app beneran MATI/FC! Membuka ulang secara silent..."
-                kirim_tele "鈿狅笍 [RF Lokal] Clone $alias_app terdeteksi force close! Membuka ulang..."
+                echo "⚠️ Clone $alias_app beneran MATI/FC! Membuka ulang secara silent..."
                 
                 su -c "am force-stop $app" &> /dev/null
                 sleep 1
@@ -128,3 +96,4 @@ while true; do
     sleep 3
 done
 EOF
+chmod +x bot.sh
